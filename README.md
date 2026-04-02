@@ -1,5 +1,7 @@
 # Withings Health Sync
 
+![Docker Build](https://github.com/jasonwaters/withings-health-sync/actions/workflows/publish-docker.yml/badge.svg)
+
 Sync Withings health data (weight, body composition, and more) for multiple family profiles to local JSON files. Designed to run unattended on a NAS or server via Docker, with automatic token refresh and incremental syncs.
 
 ## Features
