@@ -45,7 +45,9 @@ Sync Withings health data (weight, body composition, and more) for multiple fami
 2. Set the callback URL to `https://jasonwaters.github.io/withings-health-sync/callback.html`
 3. Note the **Client ID** and **Client Secret**
 
-### 2. Configure Environment
+### 2. Configure Environment (Local Development)
+
+When running locally (without Docker), create a `.env` file:
 
 ```bash
 cp .env.template .env
@@ -58,6 +60,8 @@ WITHINGS_CLIENT_ID=your_client_id
 WITHINGS_CLIENT_SECRET=your_client_secret
 WITHINGS_CALLBACK_URL=https://jasonwaters.github.io/withings-health-sync/callback.html
 ```
+
+When running with Docker, these values are passed as environment variables to the container instead (see [Docker](#docker) section below).
 
 ### 3. Install Dependencies
 
@@ -110,8 +114,10 @@ docker pull ghcr.io/jasonwaters/withings-health-sync:latest
 services:
   sync:
     image: ghcr.io/jasonwaters/withings-health-sync:latest
-    env_file: .env
     environment:
+      - WITHINGS_CLIENT_ID=your_client_id
+      - WITHINGS_CLIENT_SECRET=your_client_secret
+      - WITHINGS_CALLBACK_URL=https://jasonwaters.github.io/withings-health-sync/callback.html
       - DATA_DIR=/app/data
     volumes:
       - ./data:/app/data
@@ -174,13 +180,15 @@ Each measurement entry contains:
 
 ### Environment Variables
 
+These are read from a `.env` file when running locally, or passed directly as container environment variables when running with Docker.
+
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `WITHINGS_CLIENT_ID` | Yes | Withings developer app client ID |
 | `WITHINGS_CLIENT_SECRET` | Yes | Withings developer app client secret |
 | `WITHINGS_CALLBACK_URL` | Yes | OAuth callback URL (your hosted callback page) |
 | `WITHINGS_USER_IDS` | No | Comma-separated user IDs to sync (empty = all authorized profiles) |
-| `DATA_DIR` | No | Directory for data files (default: `./data`) |
+| `DATA_DIR` | No | Directory for data files (default: `./data` locally, `/app/data` in Docker) |
 
 ## Development
 

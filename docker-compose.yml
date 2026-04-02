@@ -2,8 +2,11 @@ services:
   sync:
     build: .
     container_name: withings-health-sync
-    env_file: .env
     environment:
+      - WITHINGS_CLIENT_ID=${WITHINGS_CLIENT_ID}
+      - WITHINGS_CLIENT_SECRET=${WITHINGS_CLIENT_SECRET}
+      - WITHINGS_CALLBACK_URL=${WITHINGS_CALLBACK_URL}
+      - WITHINGS_USER_IDS=${WITHINGS_USER_IDS:-}
       - DATA_DIR=/app/data
     volumes:
       - ./data:/app/data
