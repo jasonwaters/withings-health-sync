@@ -1,0 +1,36 @@
+{
+  "name": "withings-health-sync",
+  "version": "1.0.0",
+  "description": "Sync Withings health data (weight, body composition) for all family profiles to local JSON files",
+  "type": "module",
+  "scripts": {
+    "authorize": "tsx src/authorize.ts",
+    "sync": "tsx src/sync.ts",
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jasonwaters/withings-health-sync.git"
+  },
+  "keywords": ["withings", "health", "sync", "weight", "body-composition"],
+  "author": "Jason Waters",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jasonwaters/withings-health-sync/issues"
+  },
+  "homepage": "https://github.com/jasonwaters/withings-health-sync#readme",
+  "dependencies": {
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
