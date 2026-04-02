@@ -42,7 +42,7 @@ Sync Withings health data (weight, body composition, and more) for multiple fami
 ### 1. Create a Withings Developer App
 
 1. Go to [developer.withings.com](https://developer.withings.com) and create an application
-2. Set the callback URL to your GitHub Pages URL (e.g., `https://yourusername.github.io/withings-health-sync/callback.html`) or any URL where you'll host the callback page
+2. Set the callback URL to `https://jasonwaters.github.io/withings-health-sync/callback.html`
 3. Note the **Client ID** and **Client Secret**
 
 ### 2. Configure Environment
@@ -56,7 +56,7 @@ Edit `.env` with your credentials:
 ```
 WITHINGS_CLIENT_ID=your_client_id
 WITHINGS_CLIENT_SECRET=your_client_secret
-WITHINGS_CALLBACK_URL=https://yourusername.github.io/withings-health-sync/callback.html
+WITHINGS_CALLBACK_URL=https://jasonwaters.github.io/withings-health-sync/callback.html
 ```
 
 ### 3. Install Dependencies
