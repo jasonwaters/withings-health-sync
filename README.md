@@ -114,7 +114,7 @@ docker pull ghcr.io/jasonwaters/withings-health-sync:latest
 
 ```yaml
 services:
-  sync:
+  withings-health-sync:
     image: ghcr.io/jasonwaters/withings-health-sync:latest
     environment:
       - WITHINGS_CLIENT_ID=your_client_id
@@ -128,10 +128,10 @@ services:
 
 ```bash
 # First-time authorization (interactive)
-docker compose run authorize
+docker compose run withings-health-sync node dist/authorize.js
 
 # Run a sync
-docker compose run sync
+docker compose run withings-health-sync
 ```
 
 ### Scheduled Syncs
@@ -140,7 +140,7 @@ Use cron, systemd timers, or your NAS's task scheduler to run the sync on a sche
 
 ```bash
 # Example cron entry: sync daily at 6 AM
-0 6 * * * cd /path/to/withings-health-sync && docker compose run --rm sync
+0 6 * * * cd /path/to/withings-health-sync && docker compose run --rm withings-health-sync
 ```
 
 ## Data Files
