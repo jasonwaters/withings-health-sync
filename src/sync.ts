@@ -3,6 +3,7 @@ import { Storage, mergeMeasurements } from './storage.js';
 import { WithingsClient } from './withings-client.js';
 import { decodeMeasureGroup } from './measures.js';
 import { BODY_MEASURE_TYPES } from './types.js';
+import { processAndSendWebhook } from './webhook.js';
 import type { Tokens, DecodedMeasurement } from './types.js';
 
 function log(msg: string): void {
@@ -92,7 +93,7 @@ async function enrichWithHeight(
 }
 
 async function main(): Promise<void> {
-  const config = loadConfig();
+  const config = await loadConfig();
   const storage = new Storage(config.dataDir);
 
   log('Starting Withings Health Sync');
@@ -159,6 +160,21 @@ async function main(): Promise<void> {
     });
 
     await storage.saveSyncState(syncState);
+
+    if (config.webhooks) {
+      const webhookConfig = config.webhooks.find(
+        (wh) => wh.profileKey === key,
+      );
+      if (webhookConfig) {
+        log(`  Sending ${webhookConfig.count ?? 3} measurements to webhook...`);
+        try {
+          await processAndSendWebhook(webhookConfig, allMeasurements, tokens.profileName);
+          log('  Webhook sent successfully');
+        } catch (err) {
+          log(`  Webhook failed: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+    }
   }
 
   log('Sync complete!');

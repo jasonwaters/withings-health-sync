@@ -141,4 +141,14 @@ export interface WithingsConfig {
   apiEndpoint: string;
   userIds?: number[];
   dataDir: string;
+  webhooks?: WebhookConfig[];
+}
+
+export interface WebhookConfig {
+  profileKey: string;
+  webhookUrl: string;
+  units?: 'metric' | 'imperial';
+  count?: number;
+  excludedKeys?: string[];
+  payloadKey?: string;
 }

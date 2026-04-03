@@ -18,7 +18,7 @@ async function prompt(question: string): Promise<string> {
 }
 
 async function main(): Promise<void> {
-  const config = loadConfig();
+  const config = await loadConfig();
   const storage = new Storage(config.dataDir);
 
   const existingStore = await storage.loadTokenStore();

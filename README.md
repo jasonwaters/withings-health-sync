@@ -102,6 +102,16 @@ npm run sync
 
 The first sync fetches all historical data. Subsequent syncs are incremental, fetching only measurements recorded since the last sync.
 
+### 6. Send Webhooks (Optional)
+
+To manually send webhooks without performing a sync:
+
+```bash
+npm run webhook
+```
+
+This reads existing measurement files and POSTs to configured webhooks according to `data/webhooks.json`.
+
 ## Docker
 
 ### Using the Pre-built Image
@@ -132,6 +142,9 @@ docker compose run withings-health-sync node dist/authorize.js
 
 # Run a sync
 docker compose run withings-health-sync
+
+# Send webhooks only (without syncing)
+docker compose run withings-health-sync node dist/webhook-send.js
 ```
 
 ### Scheduled Syncs
@@ -152,7 +165,7 @@ All data is stored in the `data/` directory (or `DATA_DIR`):
 | `tokens.json` | OAuth tokens for all authorized profiles (keyed by user ID) |
 | `measurements-{name}.json` | Decoded measurements for each profile |
 | `sync-state.json` | Per-user sync metadata (last update time, record counts) |
-| `users.json` | Cached profile list |
+| `webhooks.json` | Optional webhook configuration per profile |
 
 ### Measurement File Format
 
@@ -201,6 +214,7 @@ npm run test:watch   # run tests in watch mode
 npm run build        # compile TypeScript to dist/
 npm run authorize    # authorize a Withings profile
 npm run sync         # run a sync
+npm run webhook      # send webhooks without syncing
 ```
 
 ## How It Works
@@ -216,6 +230,76 @@ npm run sync         # run a sync
 5. **BMI Enrichment**: When a profile has both weight and height measurements, BMI is calculated and added to weight entries that don't already have it.
 
 6. **Persistence**: All data is stored as formatted JSON files in the data directory, designed to be mounted as a Docker volume for persistence across container restarts.
+
+7. **Webhooks (Optional)**: After each user's sync completes, if a webhook is configured for that profile in `data/webhooks.json`, the latest N measurements are POSTed to the webhook endpoint. Webhooks support:
+   - **Unit conversion**: Convert kg measurements to lbs automatically by setting `"units": "imperial"`
+   - **Key filtering**: Exclude specific fields (e.g., `deviceid`, `raw`, `bmi`) using `excludedKeys`
+   - **Per-profile configuration**: Each profile can have its own webhook URL, count, units, and exclusions
+
+Example `data/webhooks.json`:
+
+```json
+[
+  {
+    "profileKey": "alice",
+    "webhookUrl": "https://example.com/api/webhooks/abc123",
+    "payloadKey": "merge_variables",
+    "units": "imperial",
+    "count": 3,
+    "excludedKeys": ["deviceid", "raw", "bmi"]
+  },
+  {
+    "profileKey": "bob",
+    "webhookUrl": "https://example.com/bob-webhook",
+    "units": "metric",
+    "count": 5
+  }
+]
+```
+
+**Fields:**
+- `profileKey` (required): Must match the profile name you used during authorization (or user ID as string)
+- `webhookUrl` (required): The endpoint to POST to
+- `payloadKey` (optional): Wraps measurements in this key. If omitted, payload is `{ "measurements": [...] }`. If set to `"merge_variables"`, payload is `{ "merge_variables": { "measurements": [...] } }`
+- `units` (optional): `"metric"` (default) or `"imperial"` (converts all kg measurements to lbs)
+- `count` (optional): Number of latest measurements to send (default: 3)
+- `excludedKeys` (optional): Array of keys to exclude from payload (works on nested keys)
+
+Webhook payload format (with `payloadKey: "merge_variables"`):
+
+```json
+{
+  "merge_variables": {
+    "profileName": "Alice",
+    "measurements": [
+      {
+        "grpid": 7568492372,
+        "date": "2026-03-31T14:07:58.000Z",
+        "timestamp": 1774966078,
+        "category": 1,
+        "attrib": 0,
+        "timezone": "America/Denver",
+        "measures": {
+          "weight_lbs": 163.55,
+          "fat_mass_lbs": 30.40,
+          "muscle_mass_lbs": 126.50
+        }
+      }
+    ]
+  }
+}
+```
+
+Without `payloadKey`, the structure is flat:
+
+```json
+{
+  "profileName": "Alice",
+  "measurements": [...]
+}
+```
+
+If the webhook POST fails, the error is logged but the sync continues successfully.
 
 ## License
 
