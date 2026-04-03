@@ -31,7 +31,6 @@ async function main(): Promise<void> {
       const label = t.profileName ?? `User ${t.userId}`;
       console.log(`  - ${label} (userid: ${t.userId})`);
     }
-    console.log('');
   }
 
   const authUrl = WithingsClient.getAuthorizationUrl(config);

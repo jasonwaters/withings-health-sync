@@ -15,7 +15,13 @@
     "type": "git",
     "url": "git+https://github.com/jasonwaters/withings-health-sync.git"
   },
-  "keywords": ["withings", "health", "sync", "weight", "body-composition"],
+  "keywords": [
+    "withings",
+    "health",
+    "sync",
+    "weight",
+    "body-composition"
+  ],
   "author": "Jason Waters",
   "license": "ISC",
   "bugs": {
@@ -23,6 +29,7 @@
   },
   "homepage": "https://github.com/jasonwaters/withings-health-sync#readme",
   "dependencies": {
+    "dayjs": "^1.11.20",
     "dotenv": "^16.4.7"
   },
   "devDependencies": {

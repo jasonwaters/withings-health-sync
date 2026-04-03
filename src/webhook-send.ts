@@ -19,6 +19,7 @@ async function main(): Promise<void> {
   log(`Found ${config.webhooks.length} webhook(s) configured`);
 
   const tokenStore = await storage.loadTokenStore();
+  const errors: Array<{ profileKey: string; error: string }> = [];
 
   for (const webhookConfig of config.webhooks) {
     const profileKey = webhookConfig.profileKey;
@@ -38,18 +39,30 @@ async function main(): Promise<void> {
       );
       const profileName = userToken?.profileName;
 
-      const count = webhookConfig.count ?? 3;
-      log(`  Sending ${count} latest measurements to webhook...`);
+      const count = webhookConfig.lookbackTime
+        ? `measurements from last ${webhookConfig.lookbackTime}`
+        : `${webhookConfig.count ?? 3} latest measurements`;
+      log(`  Sending ${count} to webhook...`);
       
       await processAndSendWebhook(webhookConfig, allMeasurements, profileName);
       
-      log('  Webhook sent successfully');
+      log('  ✓ Webhook sent successfully');
     } catch (err) {
-      log(`  Webhook failed: ${err instanceof Error ? err.message : String(err)}`);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      log(`  ✗ Webhook failed: ${errorMsg}`);
+      errors.push({ profileKey, error: errorMsg });
     }
   }
 
   log('Webhook processing complete!');
+
+  if (errors.length > 0) {
+    log('\nErrors encountered:');
+    for (const { profileKey, error } of errors) {
+      log(`  ✗ ${profileKey}: ${error}`);
+    }
+    process.exit(1);
+  }
 }
 
 main().catch((err) => {

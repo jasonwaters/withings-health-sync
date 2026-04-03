@@ -149,6 +149,7 @@ export interface WebhookConfig {
   webhookUrl: string;
   units?: 'metric' | 'imperial';
   count?: number;
+  lookbackTime?: string;
   excludedKeys?: string[];
   payloadKey?: string;
 }

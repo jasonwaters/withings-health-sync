@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import type { DecodedMeasurement, WebhookConfig } from './types.js';
 
 const KG_TO_LBS = 2.20462;
@@ -114,13 +115,40 @@ export function getLatestMeasurements(
     .slice(0, count);
 }
 
+export function getMeasurementsByLookback(
+  allMeasurements: DecodedMeasurement[],
+  lookbackTime: string,
+): DecodedMeasurement[] {
+  const match = lookbackTime.match(/^(\d+)\s*(\w+)$/);
+  if (!match) {
+    throw new Error(`Invalid lookbackTime format: "${lookbackTime}". Expected format: "7 days", "2 months", "1 year"`);
+  }
+
+  const [, amount, unit] = match;
+  const amountNum = parseInt(amount, 10);
+  
+  const cutoffTime = dayjs().subtract(amountNum, unit as dayjs.ManipulateType);
+  const cutoffTimestamp = cutoffTime.unix();
+
+  return allMeasurements
+    .filter((m) => m.timestamp >= cutoffTimestamp)
+    .sort((a, b) => b.timestamp - a.timestamp);
+}
+
 export async function processAndSendWebhook(
   webhookConfig: WebhookConfig,
   allMeasurements: DecodedMeasurement[],
   profileName?: string,
 ): Promise<void> {
-  const count = webhookConfig.count ?? 3;
-  const latestMeasurements = getLatestMeasurements(allMeasurements, count);
-  const processed = prepareWebhookMeasurements(latestMeasurements, webhookConfig);
+  let selectedMeasurements: DecodedMeasurement[];
+
+  if (webhookConfig.lookbackTime) {
+    selectedMeasurements = getMeasurementsByLookback(allMeasurements, webhookConfig.lookbackTime);
+  } else {
+    const count = webhookConfig.count ?? 3;
+    selectedMeasurements = getLatestMeasurements(allMeasurements, count);
+  }
+
+  const processed = prepareWebhookMeasurements(selectedMeasurements, webhookConfig);
   await sendWebhook(webhookConfig.webhookUrl, processed, profileName, webhookConfig.payloadKey);
 }

@@ -245,7 +245,7 @@ Example `data/webhooks.json`:
     "webhookUrl": "https://example.com/api/webhooks/abc123",
     "payloadKey": "merge_variables",
     "units": "imperial",
-    "count": 3,
+    "lookbackTime": "2 months",
     "excludedKeys": ["deviceid", "raw", "bmi"]
   },
   {
@@ -262,7 +262,8 @@ Example `data/webhooks.json`:
 - `webhookUrl` (required): The endpoint to POST to
 - `payloadKey` (optional): Wraps measurements in this key. If omitted, payload is `{ "measurements": [...] }`. If set to `"merge_variables"`, payload is `{ "merge_variables": { "measurements": [...] } }`
 - `units` (optional): `"metric"` (default) or `"imperial"` (converts all kg measurements to lbs)
-- `count` (optional): Number of latest measurements to send (default: 3)
+- `count` (optional): Number of latest measurements to send (default: 3). Ignored if `lookbackTime` is specified.
+- `lookbackTime` (optional): Time range to include measurements from (e.g., `"7 days"`, `"2 months"`, `"1 year"`). When specified, takes precedence over `count` and returns all measurements within the time range. Supports any unit from [day.js](https://day.js.org/docs/en/manipulate/add#list-of-all-available-units): `day`, `week`, `month`, `quarter`, `year`, `hour`, `minute`, `second`
 - `excludedKeys` (optional): Array of keys to exclude from payload (works on nested keys)
 
 Webhook payload format (with `payloadKey: "merge_variables"`):

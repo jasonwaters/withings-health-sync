@@ -115,6 +115,7 @@ async function main(): Promise<void> {
   log(`Syncing ${userIds.length} profile(s)`);
 
   const syncState = await storage.loadSyncState();
+  const errors: Array<{ userid: number; label: string; error: string }> = [];
 
   for (const userid of userIds) {
     const tokens = tokenStore[String(userid)];
@@ -122,62 +123,81 @@ async function main(): Promise<void> {
     const key = profileKey(tokens);
     log(`Syncing: ${label} (userid: ${userid}, file: measurements-${key}.json)`);
 
-    const client = new WithingsClient(config, storage, tokens);
+    try {
+      const client = new WithingsClient(config, storage, tokens);
 
-    log('  Refreshing access token...');
-    await client.refreshAccessToken();
-    log('  Token refreshed');
+      log('  Refreshing access token...');
+      await client.refreshAccessToken();
+      log('  Token refreshed');
 
-    const userState = storage.getUserSyncState(syncState, userid);
-    const lastUpdate = userState?.lastUpdate ?? null;
+      const userState = storage.getUserSyncState(syncState, userid);
+      const lastUpdate = userState?.lastUpdate ?? null;
 
-    const { updatetime } = await syncUser(
-      client,
-      storage,
-      tokens,
-      key,
-      lastUpdate,
-    );
-
-    await enrichWithHeight(storage, key);
-
-    const allMeasurements = await storage.loadMeasurements(key);
-
-    const oldest = allMeasurements.length > 0
-      ? allMeasurements[allMeasurements.length - 1].date
-      : null;
-    const newest = allMeasurements.length > 0
-      ? allMeasurements[0].date
-      : null;
-
-    storage.setUserSyncState(syncState, userid, {
-      name: label,
-      lastUpdate: updatetime,
-      lastSyncAt: new Date().toISOString(),
-      totalRecords: allMeasurements.length,
-      oldestRecord: oldest,
-      newestRecord: newest,
-    });
-
-    await storage.saveSyncState(syncState);
-
-    if (config.webhooks) {
-      const webhookConfig = config.webhooks.find(
-        (wh) => wh.profileKey === key,
+      const { updatetime } = await syncUser(
+        client,
+        storage,
+        tokens,
+        key,
+        lastUpdate,
       );
-      if (webhookConfig) {
-        log(`  Sending ${webhookConfig.count ?? 3} measurements to webhook...`);
-        try {
-          await processAndSendWebhook(webhookConfig, allMeasurements, tokens.profileName);
-          log('  Webhook sent successfully');
-        } catch (err) {
-          log(`  Webhook failed: ${err instanceof Error ? err.message : String(err)}`);
+
+      await enrichWithHeight(storage, key);
+
+      const allMeasurements = await storage.loadMeasurements(key);
+
+      const oldest = allMeasurements.length > 0
+        ? allMeasurements[allMeasurements.length - 1].date
+        : null;
+      const newest = allMeasurements.length > 0
+        ? allMeasurements[0].date
+        : null;
+
+      storage.setUserSyncState(syncState, userid, {
+        name: label,
+        lastUpdate: updatetime,
+        lastSyncAt: new Date().toISOString(),
+        totalRecords: allMeasurements.length,
+        oldestRecord: oldest,
+        newestRecord: newest,
+      });
+
+      await storage.saveSyncState(syncState);
+
+      if (config.webhooks) {
+        const webhookConfig = config.webhooks.find(
+          (wh) => wh.profileKey === key,
+        );
+        if (webhookConfig) {
+        const count = webhookConfig.lookbackTime 
+          ? `measurements from last ${webhookConfig.lookbackTime}`
+          : `${webhookConfig.count ?? 3} measurements`;
+        log(`  Sending ${count} to webhook...`);
+          try {
+            await processAndSendWebhook(webhookConfig, allMeasurements, tokens.profileName);
+            log('  Webhook sent successfully');
+          } catch (err) {
+            log(`  Webhook failed: ${err instanceof Error ? err.message : String(err)}`);
+          }
         }
       }
+
+      log(`  ✓ ${label} synced successfully`);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      log(`  ✗ ${label} failed: ${errorMsg}`);
+      errors.push({ userid, label, error: errorMsg });
     }
   }
 
   log('Sync complete!');
+
+  if (errors.length > 0) {
+    log('\nErrors encountered:');
+    for (const { label, error } of errors) {
+      log(`  ✗ ${label}: ${error}`);
+    }
+    log('\nTo re-authorize failed profiles, run: npm run authorize\n');
+  }
 
   for (const userid of userIds) {
     const tokens = tokenStore[String(userid)];
@@ -188,6 +208,10 @@ async function main(): Promise<void> {
         `  ${label}: ${state.totalRecords} records (${state.oldestRecord?.split('T')[0] ?? '?'} to ${state.newestRecord?.split('T')[0] ?? '?'})`,
       );
     }
+  }
+
+  if (errors.length > 0) {
+    process.exit(1);
   }
 }
 
