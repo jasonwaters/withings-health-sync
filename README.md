@@ -128,7 +128,7 @@ services:
 
 ```bash
 # First-time authorization (interactive)
-docker compose run sync node dist/authorize.js
+docker compose run authorize
 
 # Run a sync
 docker compose run sync

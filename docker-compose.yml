@@ -1,7 +1,21 @@
 services:
+  authorize:
+    build: .
+    container_name: withings-health-sync-authorize
+    command: node dist/authorize.js
+    environment:
+      - WITHINGS_CLIENT_ID=${WITHINGS_CLIENT_ID}
+      - WITHINGS_CLIENT_SECRET=${WITHINGS_CLIENT_SECRET}
+      - WITHINGS_CALLBACK_URL=${WITHINGS_CALLBACK_URL}
+      - DATA_DIR=/app/data
+    volumes:
+      - ./data:/app/data
+    stdin_open: true
+    tty: true
+
   sync:
     build: .
-    container_name: withings-health-sync
+    container_name: withings-health-sync-sync
     environment:
       - WITHINGS_CLIENT_ID=${WITHINGS_CLIENT_ID}
       - WITHINGS_CLIENT_SECRET=${WITHINGS_CLIENT_SECRET}
